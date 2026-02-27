@@ -16,5 +16,6 @@ urlpatterns = [
     path('api/auth/', include('accounts.urls')),
 
     path('api/tracking/', include('tracking.urls')),
+    path('api/dashboard/', include('dashboard.urls')),
 
 ]

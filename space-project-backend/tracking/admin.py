@@ -1,3 +1,8 @@
 from django.contrib import admin
+from .models import ISSLocation
 
-# Register your models here.
+
+@admin.register(ISSLocation)
+class ISSLocationAdmin(admin.ModelAdmin):
+
+    list_display = ("id", "latitude", "longitude", "velocity", "created_at")
