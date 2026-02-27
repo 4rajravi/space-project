@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'tracking',
     'core',
     'dashboard',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -104,6 +105,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+ASGI_APPLICATION = 'config.asgi.application'
+
 REST_FRAMEWORK = {
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -146,4 +149,10 @@ SIMPLE_JWT = {
 
     "AUTH_HEADER_TYPES": ("Bearer",),
 
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
 }

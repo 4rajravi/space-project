@@ -59,3 +59,23 @@ class ISSHistoryView(APIView):
 
         return Response(data)
     
+class ISSTrailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        locations = ISSLocation.objects.order_by("-created_at")[:100]
+        locations = reversed(locations)
+
+        trail = [
+            {
+                "latitude": loc.latitude,
+                "longitude": loc.longitude,
+                "timestamp": loc.timestamp,
+            }
+            for loc in locations
+        ]
+
+        return Response(trail)
+    
