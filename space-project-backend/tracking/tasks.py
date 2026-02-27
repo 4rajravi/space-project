@@ -2,37 +2,56 @@ import requests
 from .models import ISSLocation
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from .models import Satellite
 
 def fetch_and_store_iss():
 
-    url = "https://api.wheretheiss.at/v1/satellites/25544"
+    satellites = Satellite.objects.all()
 
-    response = requests.get(url)
-    data = response.json()
+    if not satellites.exists():
+        print("No satellites configured")
+        return
 
-    location = ISSLocation.objects.create(
-        latitude=data.get("latitude"),
-        longitude=data.get("longitude"),
-        altitude=data.get("altitude"),
-        velocity=data.get("velocity"),
-        visibility=data.get("visibility"),
-        timestamp=data.get("timestamp"),
-    )
+    for sat in satellites:
 
-    channel_layer = get_channel_layer()
+        url = f"https://api.wheretheiss.at/v1/satellites/{sat.norad_id}"
 
-    async_to_sync(channel_layer.group_send)(
-        "iss_group",
-        {
-            "type": "send_iss_update",
-            "data": {
-                "latitude": location.latitude,
-                "longitude": location.longitude,
-                "altitude": location.altitude,
-                "velocity": location.velocity,
+        response = requests.get(url)
+
+        if response.status_code != 200:
+            print(f"Failed to fetch {sat.name}")
+            continue
+
+        data = response.json()
+
+        if "latitude" not in data:
+            print(f"Invalid data for {sat.name}: {data}")
+            continue
+
+        location = ISSLocation.objects.create(
+            satellite=sat,
+            latitude=data["latitude"],
+            longitude=data["longitude"],
+            altitude=data["altitude"],
+            velocity=data["velocity"],
+            visibility=data.get("visibility", "unknown"),
+            timestamp=data["timestamp"],
+        )
+
+        channel_layer = get_channel_layer()
+
+        async_to_sync(channel_layer.group_send)(
+            f"sat_{sat.norad_id}",
+            {
+                "type": "send_iss_update",
+                "data": {
+                    "satellite": sat.name,
+                    "latitude": location.latitude,
+                    "longitude": location.longitude,
+                    "altitude": location.altitude,
+                    "velocity": location.velocity,
+                }
             }
-        }
-    )
+        )
 
-    print("ISS location saved + broadcasted")
-    
+    print("Satellite update cycle complete")
